@@ -4,7 +4,6 @@
 
 import { describe, it, expect, afterEach, afterAll } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync, readdirSync, statSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { parseVarAssignments } from '../src/cli/cliKit.js';
 
@@ -18,8 +17,10 @@ describe('cliKit', () => {
     return dir;
   }
 
-  function tempDirInTmp(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'promptg-'));
+  function tempDirOutsideCwdSameDrive(): string {
+    // Must be on the same drive as process.cwd() (Windows runners often have temp on a different drive).
+    // Also must be outside the current directory so parseVarAssignments rejects it.
+    const dir = mkdtempSync(join(process.cwd(), '..', 'tmp-promptg-'));
     tempDirs.push(dir);
     return dir;
   }
@@ -82,22 +83,21 @@ describe('cliKit', () => {
     });
 
     it('rejects paths outside the current directory', async () => {
-      const dir = tempDirInTmp();
+      const dir = tempDirOutsideCwdSameDrive();
       const outsideFile = join(dir, 'outside.txt');
       writeFileSync(outsideFile, 'nope', 'utf8');
 
-      const relToOutside = relative(process.cwd(), outsideFile);
-      await expect(parseVarAssignments([`x@${relToOutside}`])).rejects.toThrow(
+      await expect(parseVarAssignments([`x@${outsideFile}`])).rejects.toThrow(
         /must be within current directory/i
       );
     });
 
     it('rejects traversal paths (..\\) that resolve outside the current directory', async () => {
-      const dir = tempDirInTmp();
+      const dir = tempDirOutsideCwdSameDrive();
       const outsideFile = join(dir, 'outside.txt');
       writeFileSync(outsideFile, 'nope', 'utf8');
 
-      const traversal = join('..', relative(join(process.cwd(), '..'), outsideFile));
+      const traversal = relative(process.cwd(), outsideFile);
       await expect(parseVarAssignments([`x@${traversal}`])).rejects.toThrow(
         /must be within current directory/i
       );
