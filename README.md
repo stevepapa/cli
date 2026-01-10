@@ -1,4 +1,4 @@
-# PromptG
+# PromptG CLI
 
 **Prompts as code. Versioned, shareable, standard.**
 
@@ -6,7 +6,7 @@
 [![CI](https://github.com/promptg/cli/actions/workflows/ci.yml/badge.svg)](https://github.com/promptg/cli/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-PromptG is a tool for managing AI prompts as versioned JSON files, allowing easy storage, sharing, and rendering to plain text for use with any LLM.
+PromptG CLI is a tool for managing AI prompts as versioned JSON files, allowing easy storage, sharing, and rendering to plain text for use with any LLM.
 
 ```bash
 promptg get code-review | llm
