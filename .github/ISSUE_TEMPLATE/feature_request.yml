@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest an improvement or new capability
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Please focus on the use case and the expected behavior.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      placeholder: I want to...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      placeholder: Add a flag/subcommand that...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      required: false
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      required: false

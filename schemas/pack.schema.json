@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://promptg.io/schemas/v1/pack.schema.json",
+  "title": "PromptG Pack",
+  "description": "Schema for PromptG pack files - bundles of prompts and templates",
+  "type": "object",
+  "required": ["kind", "schemaVersion", "name", "version"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional JSON Schema identifier for editor tooling."
+    },
+    "kind": {
+      "type": "string",
+      "description": "Discriminator for the document kind",
+      "const": "pack"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "description": "Pack schema version",
+      "const": "1"
+    },
+    "name": {
+      "type": "string",
+      "description": "Pack name in kebab-case",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version (semver 2.0.0)",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable name for display",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of this pack",
+      "maxLength": 1000
+    },
+    "homepage": {
+      "type": "string",
+      "description": "Homepage URL for this pack",
+      "format": "uri"
+    },
+    "author": {
+      "type": "string",
+      "description": "Pack author or maintainer",
+      "maxLength": 200
+    },
+    "tags": {
+      "type": "array",
+      "description": "Tags for categorization",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+        "maxLength": 50
+      },
+      "maxItems": 50,
+      "uniqueItems": true
+    },
+    "prompts": {
+      "type": "array",
+      "description": "Prompts included in this pack",
+      "items": {
+        "$ref": "prompt.schema.json"
+      }
+    },
+    "templates": {
+      "type": "array",
+      "description": "Templates included in this pack",
+      "items": {
+        "$ref": "template.schema.json"
+      }
+    }
+  },
+  "patternProperties": {
+    "^x-[a-z0-9][a-z0-9-]*$": {
+      "description": "Extension fields (tool/vendor-specific)."
+    }
+  },
+  "anyOf": [
+    {
+      "required": ["prompts"],
+      "properties": { "prompts": { "type": "array", "minItems": 1 } }
+    },
+    {
+      "required": ["templates"],
+      "properties": { "templates": { "type": "array", "minItems": 1 } }
+    }
+  ]
+}

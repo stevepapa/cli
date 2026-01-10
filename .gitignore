@@ -1,0 +1,43 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+yarn.lock
+pnpm-lock.yaml
+.pnpm-store/
+
+# Build output
+dist
+*.tsbuildinfo
+
+# Testing
+coverage
+.nyc_output
+
+# Environment
+.env
+.env.local
+
+# Editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Misc
+*.log
+.cache
+*.tgz
+
+# AI assistants / LLM tooling (local footprints)
+.claude/
+.codex/
+.cursor/
+.continue/
+.windsurf/
+.aider*

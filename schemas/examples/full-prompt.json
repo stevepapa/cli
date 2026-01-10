@@ -1,0 +1,35 @@
+{
+  "kind": "prompt",
+  "schemaVersion": "1",
+  "name": "code-review-typescript",
+  "displayName": "TypeScript Code Review",
+  "description": "Comprehensive code review for TypeScript projects focusing on type safety and best practices",
+  "content": "You are an expert {{language}} code reviewer.\n\nReview the following code focusing on {{focus}}.\n\nFiles: {{files}}\n\nProvide specific, actionable feedback.",
+  "defaults": {
+    "language": "TypeScript",
+    "focus": "type safety and best practices",
+    "files": "all changed files"
+  },
+  "x-promptg-interactive": {
+    "language": {
+      "question": "What programming language?",
+      "help": "e.g., TypeScript, JavaScript, Python",
+      "required": true
+    },
+    "focus": {
+      "question": "What should the review focus on?",
+      "help": "e.g., security, performance, style",
+      "required": false
+    },
+    "files": {
+      "question": "Which files to review?",
+      "help": "File paths or patterns",
+      "required": false
+    }
+  },
+  "author": "PromptG Team",
+  "tags": ["code-review", "typescript", "development"],
+  "x-promptg-time": {
+    "createdAt": "2024-01-15T10:30:00Z"
+  }
+}

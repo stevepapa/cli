@@ -1,0 +1,14 @@
+{
+  "$schema": "https://promptg.io/schemas/v1/template.schema.json",
+  "kind": "template",
+  "schemaVersion": "1",
+  "name": "explain-code",
+  "displayName": "Explain Code",
+  "description": "Explain code in simple terms",
+  "prompt": {
+    "kind": "prompt",
+    "schemaVersion": "1",
+    "name": "explain-code",
+    "content": "Explain this {{language}} code in simple terms:\n\n{{code}}"
+  }
+}

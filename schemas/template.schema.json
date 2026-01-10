@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://promptg.io/schemas/v1/template.schema.json",
+  "title": "PromptG Template",
+  "description": "Schema for PromptG template files",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "schemaVersion", "name", "displayName", "description", "prompt"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional JSON Schema identifier for editor tooling."
+    },
+    "kind": {
+      "type": "string",
+      "description": "Discriminator for the document kind",
+      "const": "template"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "const": "1",
+      "description": "Schema version"
+    },
+    "name": {
+      "type": "string",
+      "description": "Unique identifier in kebab-case",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable name for display",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of what this template does",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "prompt": {
+      "description": "Embedded Prompt document payload",
+      "$ref": "prompt.schema.json"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Tags for categorization",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+        "maxLength": 50
+      },
+      "maxItems": 50,
+      "uniqueItems": true
+    },
+    "author": {
+      "type": "string",
+      "description": "Author or maintainer",
+      "maxLength": 200
+    }
+  },
+  "patternProperties": {
+    "^x-[a-z0-9][a-z0-9-]*$": {
+      "description": "Extension fields (tool/vendor-specific)."
+    }
+  }
+}

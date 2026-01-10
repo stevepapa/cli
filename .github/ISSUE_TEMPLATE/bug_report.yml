@@ -1,0 +1,46 @@
+name: Bug report
+description: Report something that isn't working
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please include enough detail to reproduce.
+  - type: input
+    id: version
+    attributes:
+      label: CLI version
+      description: Output of `promptg --version` (or `npm ls -g @promptg/cli`)
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: Windows 11 / macOS 14 / Ubuntu 22.04
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include exact commands and any relevant files (redact secrets).
+      placeholder: |
+        1. promptg init
+        2. promptg get demo --var name=...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Paste the output (include stderr) and any stack trace.
+    validations:
+      required: true

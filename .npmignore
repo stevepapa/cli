@@ -1,0 +1,29 @@
+# Source files
+src/
+tests/
+*.ts
+!*.d.ts
+
+# Config files
+tsconfig.json
+eslint.config.js
+.editorconfig
+.prettierrc.json
+vitest.config.ts
+
+# CI/CD
+.github/
+.gitignore
+
+# Development
+coverage/
+.nyc_output/
+*.log
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
