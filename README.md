@@ -1,130 +1,176 @@
 # PromptG CLI
 
-**Prompts as code. Versioned, shareable, standard.**
-
+[![license](https://img.shields.io/npm/l/@promptg/cli)](LICENSE)
 [![npm version](https://img.shields.io/npm/v/@promptg/cli)](https://www.npmjs.com/package/@promptg/cli)
 [![CI](https://github.com/promptg/cli/actions/workflows/ci.yml/badge.svg)](https://github.com/promptg/cli/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-PromptG CLI is a tool for managing AI prompts as versioned JSON files, allowing easy storage, sharing, and rendering to plain text for use with any LLM.
+### Prompts as code. Versioned, shareable, standard.
+
+_PromptG CLI is LLM and tool agnostic. It manages prompts and prompt templates locally (“prompt-as-code”) and outputs plain text so you can pipe it into any runner or copy it anywhere._
+
+![demo](./docs/assets/demo.gif)
+
+
+ 
+_Prompts and Prompt Templates are standardised JSON files that live in your user .promptg folder, or projects (or anywhere really). They can be created, imported and exported, or compiled into packs and shared._
+
+## Installation
 
 ```bash
-promptg get code-review | llm
-```
-
-## Quickstart (60 seconds)
-
-Requirements: Node.js 20.12+
-
-```bash
-# Install
 npm install -g @promptg/cli
+promptg --help
+```
 
-# Create a project store (.promptg/)
+## Quickstart
+
+```bash
+# Create a project store in the current repo (./promptg)
 promptg init
+
+# Save a prompt from stdin (the prompt content can use {{variables}})
+echo "Hello, this is my sample prompt" | promptg prompt save hello
+
+#or create in your editor
+promptg prompt new hello
+
+# Render your prompt
+promptg get hello
+
+# Pipe it into your runner:
+# promptg get hello | <your-llm-runner>
 ```
 
-Create a prompt (stdin -> stored JSON):
+#### Variable substitution
 
 ```bash
-echo "Review this code for correctness, security, and performance." | promptg prompt save code-review
-```
+# Save a prompt from stdin (the prompt content can use {{variables}})
+echo "Review this code, focus on {{focus}}." | promptg prompt save review
 
-Render it (stdout -> pipe anywhere):
+# Render it with variables
+promptg get review --var focus=Security
+```
+#### Quick install packs
+```bash
+promptg pack install https://promptg.io/dl/packs/promptg-pack-dev-essentials.json
+```
+See the [PromptG Starter Packs](https://github.com/promptg/starter-packs) repository for more
+
+#### Common commands
+
+See the full CLI reference: [docs/CLI.md](docs/CLI.md), or some quick commands below
 
 ```bash
-promptg get code-review | llm
+# Discover + debug
+promptg --help
+promptg status
+promptg store path --store project
+promptg doctor
+promptg version
+
+# List and inspect what you have
+promptg prompt list --long
+promptg template list --long
+promptg prompt show code-review
+promptg template show pr-review --embedded
+
+# Edit metadata (description/tags) and rename
+promptg prompt meta code-review --description "Review a diff for security issues" --tag security --tag review
+promptg prompt rename code-review security-review
+
+# Render prompt different ways
+promptg get pr-review --unfilled
+promptg get pr-review --info
+promptg get pr-review --format json
+
+# Import JSON (backup/share)
+promptg import ./promptg-prompt-hello.json
+
+# Packs: build + install
+promptg pack build my-team-pack --pack-version 1.0.0 --store project
+promptg pack install ./.promptg/packs/promptg-pack-my-team-pack.json --only-new
+
+# CI checks
+promptg validate
 ```
 
-## CLI (scriptable, pipe-friendly)
+## Prompts, Templates, Packs - The PromptG ecosystem
 
-The CLI is designed for automation: render prompts to stdout, inject runtime context via variables, and pipe into any runner.
+PromptG defines three fundamental document kinds. [Complete info](https://github.com/promptg/spec/blob/main/spec/promptg-spec.md#2-core-concepts-and-rationale-informative).
 
-```bash
-# With variables
-promptg get code-review --var language=Python --var focus=security | llm
+### Prompt
 
-# Load multiline values from a file (diffs/logs/etc.)
-git diff > pr-diff.txt
-promptg get pr-review --var diff@pr-diff.txt | llm
+A Prompt is the atomic, executable unit in PromptG. It represents a single, self-contained, ready-to-use instruction for an AI model, containing the prompt text, optional variables, and metadata.
+
+```json
+{
+  "schemaVersion": "1",
+  "kind": "prompt",
+  "name": "welcome",
+  "content": "Write a short welcome message for {{name}}."
+}
 ```
 
-## How It Works
+### Template
 
-- Store prompts/templates as JSON in a user store (`~/.promptg/`) or a project store (`.promptg/`).
-- Render prompts with `promptg get <name>` (plain text to stdout).
-- Templates are not rendered; instantiate them into prompts with `promptg prompt new <prompt-name> --from-template <template>`.
-- Share across repos/teams by committing `.promptg/` or distributing packs.
+A Template is a catalog or distribution envelope for a single, complete embedded Prompt document. It contains a full Prompt document under its prompt field. The Template itself has its own metadata for discovery and organization, which is entirely separate from the embedded Prompt.
 
-## Core Concepts
-
-- **Prompt**: a ready-to-run, concrete prompt. It has final-ish text (may still include variables) and is meant to be rendered and used directly via `promptg get <name>`.
-- **Template**: a reusable **blueprint** designed to be instantiated into prompts. It's the portable, shareable source-of-truth for a workflow (PR review, release notes, issue triage), and can include defaults + optional interactive metadata.
-- **Pack**: a versioned bundle of prompts/templates for sharing across repos.
-
-## Blueprints -> Instances
-
-The intended workflow is:
-
-- Install or author **templates** (blueprints) once.
-- Create **prompts** (instances) from templates for a specific repo/team/task.
-- Dispose/regenerate prompts freely as your context changes; keep templates stable.
-
-**Why templates require metadata:**
-
-- **Catalog separation**: tools can separate a "Template Catalog" (browse blueprints) from "My Prompts" (execute instances), reducing noise.
-- **Catalog quality**: required `displayName`/`description` ensures useful browsable views.
-
-**Quick examples:**
-
-```bash
-promptg prompt new my-pr-review --from-template pr-review --var diff@changes.txt
-promptg get my-pr-review | llm
-echo "Review code" | promptg prompt save code-review         # Save prompt
-promptg get code-review | llm                               # Execute prompt
+```json
+{
+  "schemaVersion": "1",
+  "kind": "template",
+  "name": "welcome",
+  "displayName": "Welcome message",
+  "description": "Greets a person by name",
+  "prompt": {
+      "schemaVersion": "1",
+      "kind": "prompt",
+      "name": "welcome",
+      "content": "Write a short welcome message for {{name}}."
+   }
+}
 ```
 
-## Ecosystem
+### Pack
 
-- **You are in `promptg/cli`**: the reference implementation (CLI). CLI docs live in `docs/`.
-- **Format/spec**: https://github.com/promptg/spec (canonical spec, schemas, implementer guide). PromptG documents use `schemaVersion: "1"`.
-- **Conceptual model**: https://github.com/promptg/spec/blob/main/spec/promptg-spec.md#2-core-concepts-and-rationale-informative
-- **Website**: https://promptg.io (landing page, hosted schemas, pack mirror).
+A Pack is a versioned collection that bundles multiple Prompt and/or Template documents.
 
-**Routing:**
+```json
+{
+  "kind": "pack",
+  "name": "my project onboarding",
+  "version": "1.1.4",
+  "prompts": [{ "name": "welcome", "content": "..." }],
+  "templates": [{...},{...}],
+  "prompts": [{...},{...},{...}]
+}
+```
+## `.promptg/` Folder Layout
 
-- CLI bugs/features: https://github.com/promptg/cli/issues
-- Spec/schema issues: https://github.com/promptg/spec/issues
+When you run `promptg init`, it creates a project store at `.promptg/` with this structure:
 
-## One Prompt Source. Everywhere You Work.
-
-PromptG stores prompts/templates as JSON in git and renders plain text you can use in LLM runners, CI, and editor extensions -- you choose.
-
-- **Stop Slack prompts**: the same prompt works for devs and CI.
-- **No prompt drift**: changes are reviewed, versioned, and reproducible.
-- **Templates + variables**: one standard prompt, many contexts.
-- **Tool-agnostic**: swap models/tools without rewriting prompts.
-
+```
+.promptg/
+|---- prompts/                 # Prompt documents (instances)
+|   `---- promptg-prompt-<name>.json
+|---- templates/               # Template documents (blueprints)
+|   `---- promptg-template-<name>.json
+`---- packs/                   # Pack documents (distribution bundles)
+    `---- promptg-pack-<name>.json
+```
 ## Documentation
 
-- [CLI Reference](docs/CLI.md)
-- [Format Specification](https://github.com/promptg/spec) (canonical spec)
-- [Vendored Schemas](schemas/README.md) (offline copy)
+- Full CLI reference: [docs/CLI.md](docs/CLI.md)
+- Schemas (vendored for offline use + editor tooling): [schemas/README.md](schemas/README.md)
+- Spec: https://github.com/promptg/spec
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-## Support
+## Security
 
-- Bug reports and feature requests: https://github.com/promptg/cli/issues
-- Format/spec questions: https://github.com/promptg/spec
-
-## Release Workflow
-
-- Changes land via PRs to `main`.
-- Releases are tagged from `main` as `vX.Y.Z` and published to npm as `@promptg/cli`.
+See [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache-2.0
+Apache-2.0. See [LICENSE](LICENSE).
