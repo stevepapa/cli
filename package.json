@@ -1,6 +1,6 @@
 {
   "name": "@promptg/cli",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Prompts as code: versioned, shareable, standard.",
   "type": "module",
   "main": "dist/cli.js",
