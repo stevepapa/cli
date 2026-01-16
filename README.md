@@ -4,273 +4,181 @@
 [![npm version](https://img.shields.io/npm/v/@promptg/cli)](https://www.npmjs.com/package/@promptg/cli)
 [![CI](https://github.com/promptg/cli/actions/workflows/ci.yml/badge.svg)](https://github.com/promptg/cli/actions/workflows/ci.yml)
 
+PromptG makes managing, editing and rendering dynamic AI prompts on the fly effortless
+
+- Create/manage/edit collections of prompts easily
+- Runs from command line, can pipe into anything.. e.g. ollama, CI, git hooks
+- Render variations of prompts on the fly, inject {{variables}} or inject files.. e.g. git diffs or documents
+- Can store prompts globally `~/.promptg/` or in projects `.promptg/`, run anywhere
+
+## Quickstart
+
 ```bash
+# Install
 npm install -g @promptg/cli
-```
 
-## What is this
 
-Less command line gymnastics. Version prompts, render with variables, insert code/files, pipe to any LLM.
+# Create a prompt, paste in text
+promptg prompt new my-prompt
 
-```bash
-# Before
-cat prompt.txt | sed "s/{{lang}}/Python/g; s/{{code}}/$(cat app.py)/g" | ollama run mistral
+# Or pipe to create, + add dynamic variables
+echo "Review this {{lang}} source code: {{code}}. Suggest improvements." | promptg prompt save code-review
 
-# With promptg:
-promptg get code-review --var lang=Python --var code@app.py | ollama run mistral
-```
+# Render a simple text prompt
+promptg get my-prompt
 
-## Who is this for?
+# Render with dynamic values, insert files
+promptg get code-review --var lang=Python --var code@myfile.py | ollama run mistral
 
-You don't need this for a few prompts you paste into ChatGPT.
-
-You might want this if you're managing lots of prompts, scripting prompts, inserting file contents, or keeping a team on the same prompt versions.
-
-## Getting Started
-
-```bash
-# Store once
-echo "Refactor this {{language}} code for better {{focus}}. Suggest improvements in readability, performance, and maintainability. Output refactored code and explanations." | promptg prompt save code-refactor
-
-# Or edit prompts in default editor
-promptg prompt new code-refactor
-
-# Use everywhere
-promptg get code-refactor --var language=Python --var focus=Security | llm
-
-# Version in Git, share with your team, run in CI
-git add .promptg/ && git commit -m "Add code refactor prompt"
-```
-
-## Examples
-
-### Reuse prompts globally without scattered text files
-
-```bash
-# Save once
-echo "Write a clear PR description (summary, rationale, risks, testing) for this diff:\n\n{{diff}}" | promptg prompt save pr-desc
-echo "Write an imperative commit message for this diff:\n\n{{diff}}" | promptg prompt save commit-msg
-
-# Reuse forever (no temp prompt files)
-git diff --staged > /tmp/diff.txt
-promptg get pr-desc --var diff@/tmp/diff.txt | llm > PR.md
-promptg get commit-msg --var diff@/tmp/diff.txt | llm | head -n 1
-```
-
-### You run the same prompt with different inputs
-
-```bash
-# Compare outputs across models
-for model in llama3.1 mistral deepseek; do
-  promptg get review --var code@app.py | ollama run $model > "review-$model.txt"
-done
-
-# Run it on every file in a directory
-for file in docs/*.md; do
-  promptg get summarize --var content@"$file" | llm > "${file%.md}-summary.txt"
-done
-
-# Translate to multiple languages
-for lang in Spanish French German Italian; do
-  promptg get translate --var lang=$lang --var doc@README.md | llm > "README.$lang.md"
-done
-```
-
-### CI/CD Integration
-
-```yaml
-# .github/workflows/pr-review.yml
-- run: npm install -g @promptg/cli
-- run: |
-    git diff origin/main > diff.txt
-    promptg get code-review --var diff@diff.txt | llm > review.md
-    gh pr comment -F review.md
-```
-
-### Your team needs the same prompts
-
-```bash
-# You: create a project store
+# Create a prompt store in your project, share with others/team (.promptg/)
 promptg init
-
-# Save your prompts and prompt templates, then commit to the project repo
-
-git add .promptg/ && git commit -m "Add project prompts"
-
-# New dev runs:
-git clone your-repo
-cd your-repo
-promptg list
-
-# They see:
-# - code-review: Your team's code review standard
-# - commit-msg: Commit message format
-# - pr-summary: PR description template
 ```
 
-Prompts live in `.promptg/` and get committed with your code.
+Full CLI reference: [docs/CLI.md](docs/CLI.md)
 
-### You share prompts with your team or users
+## The `.promptg/` folder
+
+Your global prompts get stored in `~/.promptg/`, you can run these anywhere.
+
+To set up a local repo in a project, just run the init command
 
 ```bash
-# Build a pack (versioned collection)
-promptg pack build dev-essentials --pack-version 1.0.0
-
-# Distribute via URL or Git
-promptg pack install https://promptg.io/dl/packs/promptg-pack-dev-essentials.json
-promptg pack install ./promptg-pack-dev-essentials.json
+promptg init
 ```
 
-Packs are versioned bundles of prompts and templates you can share via URL or file.
+It creates a project store at `.promptg/` with this structure:
 
-See [PromptG Starter Packs](https://github.com/promptg/starter-packs) for examples.
+```
+.promptg/
+|---- prompts/                 # Prompt documents
+|---- templates/               # Prompt templates
+`---- packs/                   # Bundles of prompts
+```
 
----
+PromptG autodetects this and picks up prompts in the project.
 
-## How it works
+- The prompts are part of the code, other developers/team members can run the same prompts
+- Add a `.promptg/` folder to your work or Open Source project to guide contributors and help maintain consistency
+  - **pre-pr-check** A prompt of things you want checked before devs raise a PR (tests, docs, breaking changes check, changelog, screenshots, etc.)
+  - **new-feature** A prompt to guide/shape new features, specifying conventions or constraints
+  - **update-documentation** Provide structure to help devs add to documentation in a way that conforms to project
+  - **changelog/release-notes-writer** Help generate these in a repeatable and consistent way.
 
-### Prompts are JSON files
+## Prompt files
 
-Lets us store structured data like default template values. You don't edit JSON, everything can be done in plain text through the CLI.
+Prompts are stored in the `.promptg/` folder as json files.
+
+Editing JSON sucks - The CLI always lets you work in plain text.
+
+The files are in JSON to allow storage of extra structured data, like default template values, and allow further extension.
 
 ```json
 {
   "schemaVersion": "1",
   "kind": "prompt",
   "name": "review",
-  "content": "Review this {{language}} code for security and performance."
+  "content": "Review this {{language}} code, emphasis on {{focus}}.\n\n Here is the code:  {{diff}}",
+  "defaults": {
+    "language": "Python",
+    "focus": "Security"
+  }
 }
 ```
 
-PromptG renders them to plain text:
+## Packs
+
+PromptG lets you package up prompts into packs that you can share and install.
 
 ```bash
-promptg get review --var language=TypeScript
-# Output: Review this TypeScript code for security and performance.
-```
-
-Pipe the output anywhere. PromptG doesn't care which LLM you use.
-
-### Packs distribute collections
-
-```json
-{
-  "kind": "pack",
-  "name": "team-essentials",
-  "version": "1.2.0",
-  "prompts": [...]
-}
-```
-
-One command installs everything:
-
-```bash
-promptg pack install ./promptg-pack-team-essentials.json
-```
-
-## The `.promptg/` folder
-
-```bash
-promptg init  # Creates this structure
-```
-
-```
-.promptg/
---- prompts/          # Your prompt instances
---- templates/        # Reusable blueprints
---- packs/            # Distribution bundles
-```
-
-Commit it to Git. New team members get the prompts when they clone the repo.
-
----
-
-## Quick reference
-
-```bash
-# Create & save
-promptg init
-promptg prompt new hello              # Create in $EDITOR
-echo "content" | promptg prompt save hi
-
-# Use
-promptg get hello                     # Render to stdout
-promptg get review --var lang=Go      # With variables
-promptg get review --var code@app.go  # From file
-promptg get review | llm              # Pipe to LLM
-
-# Discover
-promptg prompt list
-promptg prompt show code-review
-promptg template list --tag security
-
 # Share
 promptg pack build my-pack --pack-version 1.0.0
-promptg pack install ./path/to/pack.json
-
-# CI/CD
-promptg validate  # Validate all files
+promptg pack install ./path/to/pack.json (or URL)
 ```
 
-Full docs: [docs/CLI.md](docs/CLI.md)
+Packs are versioned bundles of prompts you can share via URL or file.
 
----
+See [PromptG Starter Packs](https://github.com/promptg/starter-packs) for examples.
 
-## Design principles
+## Other CLI features
 
-PromptG sticks to basics: it outputs plain text you can pipe anywhere (like cat but for prompts), works with any LLM without lock-in, and stores everything as git-friendly JSON files in `.promptg/` so you can version, branch, or PR them like code. If the tool vanishes, your data is just portable files with an open spec, no drama.
+- Clean stream separation: machine output to stdout, status/warnings/errors to stderr (--quiet suppresses status).
+- First-class JSON mode: --format json / --json returns structured envelopes (ok/data/warnings + ok=false/error{code,message,details}), including --help / --version.
+- Stable exit codes: 0 success, 1 validation/runtime, 2 usage, 130 canceled.
+- Debuggable failures: --debug adds stack/cause into JSON details (and prints stack in text mode).
+- Pipeline-friendly: prompt save <name> reads from stdin; render prints prompt text by default.
+- Store scopes: --store auto|project|global with project auto-detect (.promptg/) + fallback behavior.
+- Reliability/CI: atomic writes, validate command that exits non-zero on issues, plus doctor diagnostics with JSON output.
 
----
-
-## FAQ
-
-**Can I still use ChatGPT/Claude/my-favorite-tool?**
-
-Yes. PromptG outputs plain text. Pipe it wherever you want:
+## Common commands
 
 ```bash
-promptg get review | pbcopy  # Copy to clipboard, paste in ChatGPT
-promptg get review | ollama run mistral  # Use llm CLI
-promptg get review | claude -p # Use Claude CLI
+# Discover / diagnose
+promptg --help
+promptg status
+promptg store path --store project
+promptg doctor
+promptg version
+
+# Prompts: list + inspect
+promptg prompt list
+promptg prompt list --long
+promptg prompt list --filter security
+promptg prompt show code-review
+promptg prompt show code-review --format json
+
+# Prompts: render
+promptg get code-review
+promptg get code-review --info
+promptg get code-review --unfilled
+promptg get code-review --var language=TypeScript --var diff@./diff.txt
+promptg get code-review --interactive
+promptg get code-review --copy
+promptg get code-review --format json
+
+# Prompts: edit + metadata + rename + delete
+promptg prompt edit code-review
+promptg prompt edit code-review --raw
+promptg prompt meta code-review --description "Review for security" --tag security --tag review
+promptg prompt rename code-review security-review
+promptg prompt delete security-review
+
+# Templates
+promptg template list --long
+promptg template show pr-review --embedded
+promptg template new pr-review
+promptg template edit pr-review
+promptg template delete pr-review
+
+# Import JSON (file or URL)
+promptg import ./my-prompt.json
+promptg import https://example.com/prompt.json
+promptg import ./my-prompt.json --force
+
+# Packs (build + install)
+promptg pack build my-pack --pack-version 1.0.0
+promptg pack install ./pack.json
+promptg pack install ./pack.json --only-new
+promptg pack install ./pack.json --force
+
+# CI-friendly validation (non-zero exit on issues)
+promptg validate
+promptg validate --format json
 ```
-
-**Do I need to learn JSON?**
-
-No. Editing JSON sucks - CLI lets you work in plain text.
-Prompt files are in JSON to store extra metadata.. (e.g. default template values)
-
-```bash
-echo "your prompt text" | promptg prompt save name
-promptg prompt edit name  # Opens in your $EDITOR
-```
-
-You can hand-edit JSON if you want. You don't have to.
-
-**What if I want to stop using PromptG?**
-
-You have JSON files. Read them with `cat`, parse with `jq`, convert with a script. The [spec](https://github.com/promptg/spec) is public. Migration to anything else takes minutes.
-
-**Does this work offline?**
-
-Yes. PromptG is a local CLI. No network, no accounts, no API keys. Your prompts live on your disk.
-
----
 
 ## Documentation
 
-- [CLI Reference](docs/CLI.md)
-- [Schemas](schemas/README.md)
-- [Spec](https://github.com/promptg/spec)
-- [Starter Packs](https://github.com/promptg/starter-packs)
-
----
+- Full CLI reference: [docs/CLI.md](docs/CLI.md)
+- Schemas (vendored for offline use + editor tooling): [schemas/README.md](schemas/README.md)
+- Spec: https://github.com/promptg/spec
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
----
+## Security
+
+See [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE)
+Apache-2.0. See [LICENSE](LICENSE).
